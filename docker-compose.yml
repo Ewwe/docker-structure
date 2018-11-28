@@ -1,0 +1,105 @@
+version: '2'
+
+networks:
+  local-net:
+    driver: bridge
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy:alpine
+    container_name: nginx-proxy
+    ports:
+      - "0.0.0.0:80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+#      - ./certs:/etc/nginx/certs
+#      - ./htpasswd:/etc/nginx/htpasswd
+    privileged: true
+    networks:
+      - local-net
+
+  php-app1:
+    image: 'bitnami/php-fpm:7.2'
+    container_name: php-app1
+    networks:
+      - local-net
+    volumes:
+      - ./www-data:/app
+
+  php-app2:
+    image: 'bitnami/php-fpm:7.1'
+    container_name: php-app2
+    networks:
+      - local-net
+    volumes:
+      - ./www-data:/app
+
+  nginx-app1:
+    image: 'bitnami/nginx:latest'
+    container_name: nginx-app1
+    depends_on:
+      - php-app1
+    networks:
+      - local-net
+    environment:
+      - VIRTUAL_HOST=app1.local
+      - VIRTUAL_PORT=8080
+    volumes:
+      - ./docker-conf/nginx-conf/vhost1.conf:/bitnami/nginx/conf/vhosts/yourapp.conf
+
+  nginx-app2:
+    image: 'bitnami/nginx:latest'
+    container_name: nginx-app2
+    depends_on:
+      - php-app2
+    networks:
+      - local-net
+    environment:
+      - VIRTUAL_HOST=app2.local
+      - VIRTUAL_PORT=8080
+    volumes:
+      - ./docker-conf/nginx-conf/vhost2.conf:/bitnami/nginx/conf/vhosts/yourapp.conf
+
+  mysql:
+    image: percona:5.7
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: KcmdkfDWEWe2_ds
+      MYSQL_DATABASE: database-example
+    volumes:
+#      - ./docker-conf/mysql-data:/var/lib/mysql
+      - ./db-data:/docker-entrypoint-initdb.d
+    networks:
+      - local-net
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    environment:
+      - VIRTUAL_HOST=adminer.local
+      - VIRTUAL_PORT=8080
+    depends_on:
+      - mysql
+    networks:
+      - local-net
+
+  phpmyadmin:
+    image: bitnami/phpmyadmin:latest
+    container_name: phpmyadmin
+    depends_on:
+      - mysql
+    volumes:
+      - ./docker-conf/phpmyadmin-data:/bitnami
+    environment:
+      - DATABASE_HOST=mysql
+      - DATABASE_PORT=3306
+      - VIRTUAL_HOST=phpmyadmin.local
+    networks:
+      - local-net
+
+  shell:
+    image: 'centos:7'
+    container_name: shell
+    networks:
+      - local-net
+    command: "journalctl -f"
