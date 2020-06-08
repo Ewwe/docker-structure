@@ -45,7 +45,7 @@ services:
       - VIRTUAL_HOST=app1.local
       - VIRTUAL_PORT=8080
     volumes:
-      - ./docker-conf/nginx-conf/vhost1.conf:/bitnami/nginx/conf/vhosts/yourapp.conf
+      - ./docker-conf/nginx-conf/vhost1.conf:/opt/bitnami/nginx/conf/server_blocks/yourapp.conf
 
   nginx-app2:
     image: 'bitnami/nginx:latest'
@@ -58,7 +58,7 @@ services:
       - VIRTUAL_HOST=app2.local
       - VIRTUAL_PORT=8080
     volumes:
-      - ./docker-conf/nginx-conf/vhost2.conf:/bitnami/nginx/conf/vhosts/yourapp.conf
+      - ./docker-conf/nginx-conf/vhost2.conf:/opt/bitnami/nginx/conf/server_blocks/yourapp.conf
 
   mysql:
     image: percona:5.7
